@@ -179,7 +179,16 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
 ## Citation
 
 
-```
+```bibtex
+@article{Li_2024_IJCV,
+  title={LSKNet: A Foundation Lightweight Backbone for Remote Sensing},
+  author={Li, Yuxuan and Li, Xiang and Dai, Yimain and Hou, Qibin and Liu, Li and Liu, Yongxiang and Cheng, Ming-Ming and Yang, Jian},
+  journal={International Journal of Computer Vision},
+  year={2024},
+  doi = {https://doi.org/10.1007/s11263-024-02247-9},
+  publisher={Springer}
+}
+
 @article{hu2020jittor,
   title={Jittor: a novel deep learning framework with meta-operators and unified graph execution},
   author={Hu, Shi-Min and Liang, Dun and Yang, Guo-Ye and Yang, Guo-Wei and Zhou, Wen-Yang},
