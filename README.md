@@ -158,11 +158,6 @@ python run_net.py --config-file=configs/base.py --task=test
 - :clock3: R3Det
 - :clock3: Cascade R-CNN
 - :clock3: Oriented Reppoints
-- :heavy_plus_sign: DCL
-- :heavy_plus_sign: Double Head OBB
-- :heavy_plus_sign: Guided Anchoring
-- :heavy_plus_sign: Sampling Equivariant Self-attention Networks
-- :heavy_plus_sign: ...
 
 ### Plan of Datasets
 <b>:heavy_check_mark:Supported  :clock3:Doing :heavy_plus_sign:TODO</b>
@@ -174,36 +169,11 @@ python run_net.py --config-file=configs/base.py --task=test
 - :heavy_check_mark: SSDD+
 - :heavy_check_mark: FAIR
 - :heavy_check_mark: COCO
-- :heavy_plus_sign: LS-SSDD
-- :heavy_plus_sign: DIOR-R
-- :heavy_plus_sign: HRSC2016
-- :heavy_plus_sign: ICDAR2015
-- :heavy_plus_sign: ICDAR2017 MLT
-- :heavy_plus_sign: UCAS-AOD
-- :heavy_plus_sign: FDDB
-- :heavy_plus_sign: OHD-SJTU
-- :heavy_plus_sign: MSRA-TD500
-- :heavy_plus_sign: Total-Text
-- :heavy_plus_sign: ...
-
-## Contact Us
-
-
-Website: http://cg.cs.tsinghua.edu.cn/jittor/
-
-Email: jittor@qq.com
-
-File an issue: https://github.com/Jittor/jittor/issues
-
-QQ Group: 761222083
-
-
-<img src="https://cg.cs.tsinghua.edu.cn/jittor/images/news/2020-12-8-21-19-1_2_2/fig4.png" width="200"/>
 
 ## The Team
 
 
-JRS is currently maintained by the [Tsinghua CSCG Group](https://cg.cs.tsinghua.edu.cn/). If you are also interested in JRS and want to improve it, Please join us!
+JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net/). If you are also interested in JRS and want to improve it, Please join us!
 
 
 ## Citation
