@@ -3,7 +3,7 @@ import jittor.nn as nn
 from jittor import init
 import math
 
-from jdet.utils.registry import BACKBONES
+from jrs.utils.registry import BACKBONES
 from .layers import DropPath, to_2tuple, trunc_normal_
 
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)

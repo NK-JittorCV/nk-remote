@@ -36,7 +36,7 @@ total_instances = sum(distributions.values())
 print('\ntotal_imgs:', total_imgs)
 print('\ntotal_instances:', total_instances)
 
-jdet_coarse2fine_mappings = {
+jrs_coarse2fine_mappings = {
     "Airplane": [
         "A220", "A321", "A330", "A350", "ARJ21", "Boeing737", "Boeing747",
         "Boeing777", "Boeing787", "C919", "other-airplane"],
@@ -56,27 +56,27 @@ jdet_coarse2fine_mappings = {
     "Bridge": ["Bridge"],
 }
 
-fair1m2jdet_distributions = {}
-for key, value in jdet_coarse2fine_mappings.items():
-    if key not in fair1m2jdet_distributions:
-        fair1m2jdet_distributions[key] = 0
+fair1m2jrs_distributions = {}
+for key, value in jrs_coarse2fine_mappings.items():
+    if key not in fair1m2jrs_distributions:
+        fair1m2jrs_distributions[key] = 0
     for v in value:
         if v in distributions:
-            fair1m2jdet_distributions[key] += distributions[v]
+            fair1m2jrs_distributions[key] += distributions[v]
 
-pp.pprint(fair1m2jdet_distributions)
-total_fair1m2jdet_instances = sum(fair1m2jdet_distributions.values())
-print('\ntotal_fair1m2jdet_instances:', total_fair1m2jdet_instances)
+pp.pprint(fair1m2jrs_distributions)
+total_fair1m2jrs_instances = sum(fair1m2jrs_distributions.values())
+print('\ntotal_fair1m2jrs_instances:', total_fair1m2jrs_instances)
 
-for plane in jdet_coarse2fine_mappings["Airplane"]:
+for plane in jrs_coarse2fine_mappings["Airplane"]:
     print(plane, distributions[plane])
 
 print('\n')
 
-for ship in jdet_coarse2fine_mappings["Ship"]:
+for ship in jrs_coarse2fine_mappings["Ship"]:
     print(ship, distributions[ship])
 
 print('\n')
 
-for vehicle in jdet_coarse2fine_mappings["Vehicle"]:
+for vehicle in jrs_coarse2fine_mappings["Vehicle"]:
     print(vehicle, distributions[vehicle])

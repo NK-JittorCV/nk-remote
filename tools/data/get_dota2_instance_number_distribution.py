@@ -39,7 +39,7 @@ total_instances = sum(distributions.values())
 print('\ntotal_imgs:', total_imgs)
 print('\ntotal_instances:', total_instances)
 
-jdet_coarse2fine_mappings = {
+jrs_coarse2fine_mappings = {
     "Airplane": ["plane"
         ],
     "Ship": ["ship"
@@ -57,14 +57,14 @@ jdet_coarse2fine_mappings = {
                "helicopter", "helipad", "storage-tank", "swimming-pool"],
 }
 
-dota2jdet_distributions = {}
-for key, value in jdet_coarse2fine_mappings.items():
-    if key not in dota2jdet_distributions:
-        dota2jdet_distributions[key] = 0
+dota2jrs_distributions = {}
+for key, value in jrs_coarse2fine_mappings.items():
+    if key not in dota2jrs_distributions:
+        dota2jrs_distributions[key] = 0
     for v in value:
         if v in distributions:
-            dota2jdet_distributions[key] += distributions[v]
+            dota2jrs_distributions[key] += distributions[v]
 
-pp.pprint(dota2jdet_distributions)
-total_dota2jdet_instances = sum(dota2jdet_distributions.values())
-print('\ntotal_dota2jdet_instances:', total_dota2jdet_instances)
+pp.pprint(dota2jrs_distributions)
+total_dota2jrs_instances = sum(dota2jrs_distributions.values())
+print('\ntotal_dota2jrs_instances:', total_dota2jrs_instances)

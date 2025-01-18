@@ -25,7 +25,7 @@ print("total_num_fair1m:", total_num_fair1m)
 for key, value in fair1m_1_5_dict.items():
     print(key + " vs Others:", "1 :", (total_num_fair1m - value) / value)
 
-from jdet.data.lvis import LVIS_CATEGORIES
+from jrs.data.lvis import LVIS_CATEGORIES
 
 total_num_lvis = 0
 for cls_dict in LVIS_CATEGORIES:

@@ -5,15 +5,15 @@ from jittor import nn
 from jittor import init
 from tqdm import tqdm
 import numpy as np
-import jdet
+import jrs
 import pickle
-from jdet.config import get_cfg,save_cfg, init_cfg
-from jdet.utils.visualization import visualize_results
-from jdet.utils.registry import build_from_cfg,MODELS,SCHEDULERS,DATASETS,HOOKS,OPTIMS
-from jdet.config import get_classes_by_name
-from jdet.utils.general import build_file, current_time, sync,check_file,check_interval,parse_losses,search_ckpt
-from jdet.data.devkits.data_merge import data_merge_result
-from jdet.models.boxes.iou_calculator import BboxOverlaps2D_rotated_v1
+from jrs.config import get_cfg,save_cfg, init_cfg
+from jrs.utils.visualization import visualize_results
+from jrs.utils.registry import build_from_cfg,MODELS,SCHEDULERS,DATASETS,HOOKS,OPTIMS
+from jrs.config import get_classes_by_name
+from jrs.utils.general import build_file, current_time, sync,check_file,check_interval,parse_losses,search_ckpt
+from jrs.data.devkits.data_merge import data_merge_result
+from jrs.models.boxes.iou_calculator import BboxOverlaps2D_rotated_v1
 from tqdm import tqdm
 from jittor_utils import auto_diff
 import copy
@@ -24,7 +24,7 @@ from PIL import Image
 jt.cudnn.set_max_workspace_ratio(0.0)
 
 
-init_cfg('/home/lyx/detection/JDet/configs/oriented_rcnn_r101_fpn_1x_dota_ms_with_flip_rotate_balance_cate.py') # oriented_rcnn_r101_fpn_1x_dota_ms_with_flip_rotate_balance_cate   orcnn_van3_for_test_1.py
+init_cfg('/home/lyx/detection/jrs/configs/oriented_rcnn_r101_fpn_1x_dota_ms_with_flip_rotate_balance_cate.py') # oriented_rcnn_r101_fpn_1x_dota_ms_with_flip_rotate_balance_cate   orcnn_van3_for_test_1.py
 class Runner:
     def __init__(self):
         cfg = get_cfg()
