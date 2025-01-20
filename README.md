@@ -155,9 +155,8 @@ python run_net.py --config-file=configs/base.py --task=test
 - :heavy_check_mark: Reppoints
 - :heavy_check_mark: RSDet
 - :heavy_check_mark: ATSS
-- :clock3: R3Det
-- :clock3: Cascade R-CNN
-- :clock3: Oriented Reppoints
+- :heavy_check_mark: LSKNet
+- :clock3: Strip R-CNN
 
 ### Plan of Datasets
 <b>:heavy_check_mark:Supported  :clock3:Doing :heavy_plus_sign:TODO</b>
@@ -214,5 +213,6 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
 11. [AerialDetection](https://github.com/dingjiansw101/AerialDetection)
 12. [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit)
 13. [OBBDetection](https://github.com/jbwang1997/OBBDetection)
+14. [LSKNet](https://github.com/zcablii/LSKNet)
 
 
