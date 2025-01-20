@@ -221,5 +221,6 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
 12. [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit)
 13. [OBBDetection](https://github.com/jbwang1997/OBBDetection)
 14. [LSKNet](https://github.com/zcablii/LSKNet)
+15. [Strip R-CNN](https://github.com/YXB-NKU/Strip-R-CNN)
 
 
