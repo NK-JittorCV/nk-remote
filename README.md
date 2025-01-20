@@ -156,7 +156,7 @@ python run_net.py --config-file=configs/base.py --task=test
 - :heavy_check_mark: RSDet
 - :heavy_check_mark: ATSS
 - :heavy_check_mark: LSKNet
-- :clock3: Strip R-CNN
+- :heavy_check_mark: Strip R-CNN
 
 ### Plan of Datasets
 <b>:heavy_check_mark:Supported  :clock3:Doing :heavy_plus_sign:TODO</b>
