@@ -188,6 +188,13 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
   publisher={Springer}
 }
 
+@article{yuan2025strip,
+  title={Strip R-CNN: Large Strip Convolution for Remote Sensing Object Detection},
+  author={Yuan, Xinbin and Zheng, ZhaoHui and Li, Yuxuan and Liu, Xialei and Liu, Li and Li, Xiang and Hou, Qibin and Cheng, Ming-Ming},
+  journal={arXiv preprint arXiv:2501.03775},
+  year={2025}
+}
+
 @article{hu2020jittor,
   title={Jittor: a novel deep learning framework with meta-operators and unified graph execution},
   author={Hu, Shi-Min and Liang, Dun and Yang, Guo-Ye and Yang, Guo-Wei and Zhou, Wen-Yang},
