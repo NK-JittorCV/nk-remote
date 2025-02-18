@@ -132,34 +132,24 @@ python run_net.py --config-file=configs/base.py --task=test
 6. bc: balance category
 7. mAP: mean Average Precision on DOTA1.0 test set
 
-### Plan of Models
-<b>:heavy_check_mark:Supported  :clock3:Doing :heavy_plus_sign:TODO</b>
+### Supported Models
 
+**Baseline**
 - :heavy_check_mark: S2ANet
-- :heavy_check_mark: Gliding
 - :heavy_check_mark: RetinaNet
 - :heavy_check_mark: Rotated RetinaNet
 - :heavy_check_mark: Faster R-CNN
-- :heavy_check_mark: SSD
 - :heavy_check_mark: ROI Transformer
 - :heavy_check_mark: FCOS
 - :heavy_check_mark: Oriented R-CNN
 - :heavy_check_mark: YOLOv5
-- :heavy_check_mark: GWD
-- :heavy_check_mark: KLD
-- :heavy_check_mark: H2RBox
-- :heavy_check_mark: KFIoU
+
+**SOTA methods**
 - :heavy_check_mark: Localization Distillation
-- :heavy_check_mark: ReDet
-- :heavy_check_mark: CSL
-- :heavy_check_mark: Reppoints
-- :heavy_check_mark: RSDet
-- :heavy_check_mark: ATSS
 - :heavy_check_mark: LSKNet
 - :heavy_check_mark: Strip R-CNN
 
-### Plan of Datasets
-<b>:heavy_check_mark:Supported  :clock3:Doing :heavy_plus_sign:TODO</b>
+### Supported Datasets
 
 - :heavy_check_mark: DOTA1.0
 - :heavy_check_mark: DOTA1.5
