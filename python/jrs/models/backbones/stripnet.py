@@ -198,8 +198,8 @@ class Block(nn.Module):
             self.norm1 = build_norm_layer(norm_cfg, dim)
             self.norm2 = build_norm_layer(norm_cfg, dim)
         else:
-            self.norm1 = BatchNorm2d(dim)
-            self.norm2 = BatchNorm2d(dim)
+            self.norm1 = nn.BatchNorm2d(dim)
+            self.norm2 = nn.BatchNorm2d(dim)
         self.attn = Attention(dim, k1, k2)
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         mlp_hidden_dim = int(dim * mlp_ratio)
@@ -222,7 +222,7 @@ class OverlapPatchEmbed(nn.Module):
         if norm_cfg:
             self.norm = build_norm_layer(norm_cfg, embed_dim)
         else:
-            self.norm = BatchNorm2d(embed_dim)
+            self.norm = nn.BatchNorm2d(embed_dim)
 
     def execute(self, x):
         x = self.proj(x)
@@ -234,11 +234,12 @@ class StripNet(nn.Module):
     def __init__(self, img_size=224, in_chans=3, embed_dims=[64, 128, 256, 512],
                  mlp_ratios=[8, 8, 4, 4], k1s=[1, 1, 1, 1], k2s=[19, 19, 19, 19],
                  drop_rate=0., drop_path_rate=0., norm_layer=partial(nn.LayerNorm, eps=1e-6),
-                 depths=[3, 4, 6, 3], num_stages=4, pretrained=None, init_cfg=None,
+                 depths=[3, 4, 6, 3], num_stages=4, out_indices = (0, 1, 2), pretrained=None, init_cfg=None,
                  norm_cfg=None):
         super().__init__()
         self.depths = depths
         self.num_stages = num_stages
+        self.out_indices = out_indices
 
         dpr = [float(x) for x in jt.linspace(0, drop_path_rate, sum(depths))]
         cur = 0
@@ -286,7 +287,8 @@ class StripNet(nn.Module):
             x = x.reshape(B, -1, H*W).transpose(0, 2, 1)
             x = norm(x)
             x = x.transpose(0, 2, 1).reshape(B, -1, H, W)
-            outs.append(x)
+            if i in self.out_indices:
+                outs.append(x)
         return outs
 
 # 初始化参数函数

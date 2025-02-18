@@ -83,7 +83,7 @@ model = dict(
 dataset = dict(
     train=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota/trainval',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -108,7 +108,7 @@ dataset = dict(
     ),
     val=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota/trainval',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -130,7 +130,7 @@ dataset = dict(
     ),
     test=dict(
         type="ImageDataset",
-        images_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/test_1024_200_1.0/images',
+        images_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota/test/images',
         transforms=[
             dict(
                 type="RotatedResize",
