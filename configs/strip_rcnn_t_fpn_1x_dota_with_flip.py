@@ -6,10 +6,10 @@ model = dict(
         img_size=1024,
         num_stages=4,
         out_indices = (0, 1, 2, 3),
-        pretrained= True),
+        pretrained= "pretrained_weights/lsk_t_backbone-2ef8a593_jittor.pkl"),
     neck=dict(
         type='FPN',
-        in_channels=[64, 160, 256, 512],
+        in_channels=[32, 64, 160, 256],
         out_channels=256,
         num_outs=5),
     rpn = dict(
@@ -106,23 +106,21 @@ model = dict(
         )
     )
 
-angle_version = 'le90'
+
 dataset = dict(
     train=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
                 min_size=1024,
                 max_size=1024,
-                angle_version = angle_version
             ),
             dict(type='RotatedRandomFlip', prob=0.5),
             dict(
                 type="RandomRotateAug",
                 random_rotate_on=True,
-                angle_version = angle_version
             ),
             dict(
                 type = "Pad",
@@ -142,7 +140,7 @@ dataset = dict(
     ),
     val=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -164,7 +162,7 @@ dataset = dict(
     ),
     test=dict(
         type="ImageDataset",
-        images_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/test_1024_200_1.0/images/',
+        images_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/test_1024_200_1.0/images/',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -185,7 +183,14 @@ dataset = dict(
     )
 )
 
-optimizer = dict(type='AdamW',  lr=0.0002, betas=(0.9, 0.999), weight_decay=0.005, grad_clip=dict(max_norm=35, norm_type=2))
+optimizer = dict(
+    type='SGD', 
+    lr=0.01/4., #0.0,#0.01*(1/8.), 
+    momentum=0.9, 
+    weight_decay=0.0001,
+    grad_clip=dict(
+        max_norm=35, 
+        norm_type=2))
 
 scheduler = dict(
     type='StepLR',

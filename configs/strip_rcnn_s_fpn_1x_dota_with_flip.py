@@ -106,7 +106,6 @@ model = dict(
         )
     )
 
-angle_version = 'le90'
 dataset = dict(
     train=dict(
         type="DOTADataset",
@@ -116,13 +115,11 @@ dataset = dict(
                 type="RotatedResize",
                 min_size=1024,
                 max_size=1024,
-                angle_version = angle_version
             ),
             dict(type='RotatedRandomFlip', prob=0.5),
             dict(
                 type="RandomRotateAug",
                 random_rotate_on=True,
-                angle_version = angle_version
             ),
             dict(
                 type = "Pad",
@@ -185,7 +182,14 @@ dataset = dict(
     )
 )
 
-optimizer = dict(type='AdamW',  lr=0.0002, betas=(0.9, 0.999), weight_decay=0.005, grad_clip=dict(max_norm=35, norm_type=2))
+optimizer = dict(
+    type='SGD', 
+    lr=0.01/4., #0.0,#0.01*(1/8.), 
+    momentum=0.9, 
+    weight_decay=0.0001,
+    grad_clip=dict(
+        max_norm=35, 
+        norm_type=2))
 
 scheduler = dict(
     type='StepLR',

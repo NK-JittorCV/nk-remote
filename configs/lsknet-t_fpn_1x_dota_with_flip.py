@@ -6,7 +6,7 @@ model = dict(
         img_size=1024,
         num_stages=4,
         out_indices = (0, 1, 2, 3),
-        pretrained= True),
+        pretrained='pretrained_weights/lsk_t_backbone-2ef8a593_jittor.pkl'),
     neck=dict(
         type='FPN',
         in_channels=[32, 64, 160, 256],
@@ -109,7 +109,7 @@ model = dict(
 dataset = dict(
     train=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -141,7 +141,7 @@ dataset = dict(
     ),
     val=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -163,7 +163,7 @@ dataset = dict(
     ),
     test=dict(
         type="ImageDataset",
-        images_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/test_1024_200_1.0/images/',
+        images_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/test_1024_200_1.0/images/',
         transforms=[
             dict(
                 type="RotatedResize",

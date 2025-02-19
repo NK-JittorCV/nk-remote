@@ -3,9 +3,9 @@ import jittor.nn as nn
 from jittor import init
 import math
 from functools import partial
-import warnings
 from jrs.utils.registry import BACKBONES
-
+from jittor.nn import DropPath
+from jittor.init import trunc_normal_
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
 
@@ -25,45 +25,14 @@ from tqdm import tqdm
 
 HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 
-def download_url_to_file(url, dst, hash_prefix=None, progress=True):
-    file_size = None
-    req = Request(url, headers={"User-Agent": "torch.hub"})
-    u = urlopen(req)
-    meta = u.info()
-    if hasattr(meta, 'getheaders'):
-        content_length = meta.getheaders("Content-Length")
+def to_2tuple(x):
+    if isinstance(x, (int, float)):
+        return (x, x)
+    elif isinstance(x, (tuple, list)) and len(x) == 2:
+        return tuple(x)
     else:
-        content_length = meta.get_all("Content-Length")
-    if content_length is not None and len(content_length) > 0:
-        file_size = int(content_length[0])
+        raise ValueError("Input must be an int, float, or a tuple/list of length 2.")
 
-    dst = os.path.expanduser(dst)
-    dst_dir = os.path.dirname(dst)
-    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
-    try:
-        if hash_prefix is not None:
-            sha256 = hashlib.sha256()
-        with tqdm(total=file_size, disable=not progress,
-                  unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-            while True:
-                buffer = u.read(8192)
-                if len(buffer) == 0:
-                    break
-                f.write(buffer)
-                if hash_prefix is not None:
-                    sha256.update(buffer)
-                pbar.update(len(buffer))
-        f.close()
-        if hash_prefix is not None:
-            digest = sha256.hexdigest()
-            if digest[:len(hash_prefix)] != hash_prefix:
-                raise RuntimeError('invalid hash value (expected "{}", got "{}")'
-                                   .format(hash_prefix, digest))
-        shutil.move(f.name, dst)
-    finally:
-        f.close()
-        if os.path.exists(f.name):
-            os.remove(f.name)
 
 def _is_legacy_zip_format(filename):
     if zipfile.is_zipfile(filename):
@@ -97,38 +66,6 @@ def _cfg(url='', **kwargs):
         **kwargs
     }
 
-
-# 如果需要自定义的 DropPath，实现一个简单的版本
-class DropPath(nn.Module):
-    def __init__(self, drop_prob=0.):
-        super().__init__()
-        self.drop_prob = drop_prob
-
-    def execute(self, x):
-        if self.drop_prob == 0. or not self.is_training():
-            return x
-        keep_prob = 1 - self.drop_prob
-        shape = (x.shape[0],) + (1,) * (x.ndim - 1)
-        random_tensor = keep_prob + jt.rand(shape)
-        random_tensor.floor_()
-        output = x.divide(keep_prob) * random_tensor
-        return output
-
-# 构建归一化层
-def build_norm_layer(norm_cfg, num_features):
-    norm_type = norm_cfg.get('type', 'BN')
-    if norm_type == 'BN':
-        return nn.BatchNorm(num_features)
-    elif norm_type == 'LN':
-        return nn.LayerNorm(num_features)
-    else:
-        raise ValueError(f'Unsupported norm type {norm_type}')
-
-# 双重元组函数
-def to_2tuple(x):
-    if isinstance(x, tuple):
-        return x
-    return (x, x)
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU(), drop=0.):
@@ -317,45 +254,43 @@ def constant_init(module, value):
         module.bias.zero_()
 
 
-
-
-
-
-from torch.hub import load_state_dict_from_url
 def load_param(url, model):
-    checkpoint = load_state_dict_from_url(
-        url=url, map_location="cpu", check_hash=True
-    )
+    cache_dir = "./pretrained_weights"
+    os.makedirs(cache_dir, exist_ok=True)
+    filename = os.path.basename(url)
+    file_path = os.path.join(cache_dir, filename)
+    if not os.path.exists(file_path):
+        print(f"Downloading {url} to {file_path}")
+        response = requests.get(url)
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+    print(f"Loading weights from {file_path}")
+    checkpoint = jt.load(file_path)
     del checkpoint["state_dict"]["head.weight"]
     del checkpoint["state_dict"]["head.bias"]
-    model.load_state_dict(checkpoint["state_dict"])
+    model.load_parameters(checkpoint["state_dict"])
     return model
 
 @BACKBONES.register_module()
 def StripNet_T(pretrained=False, **kwargs):
     model = StripNet(
-        embed_dims=[32, 64, 160, 256], mlp_ratios=[8, 8, 4, 4], 
+        embed_dims=[32, 64, 160, 256], mlp_ratios=[8, 8, 4, 4],
         norm_layer=nn.LayerNorm, depths=[3, 3, 5, 2],
-        **kwargs)
+        **kwargs
+    )
     model.default_cfg = _cfg()
-
-    if pretrained:
-        model.load_state_dict
-        model = load_param(model_urls['stripnet_t'], model)
+    # if pretrained:
+    #     model = load_param(model_urls['lsknet_t'], model)
     return model
-
 
 @BACKBONES.register_module()
 def StripNet_S(pretrained=False, **kwargs):
     model = StripNet(
         embed_dims=[64, 128, 320, 512], mlp_ratios=[8, 8, 4, 4],
         norm_layer=nn.LayerNorm, depths=[2, 2, 4, 2],
-        **kwargs)
+        **kwargs
+    )
     model.default_cfg = _cfg()
-
-    if pretrained:
-        model.load_state_dict
-        model = load_param(model_urls['stripnet_s'], model)
+    # if pretrained:
+    #     model = load_param(model_urls['lsknet_s'], model)
     return model
- 
-

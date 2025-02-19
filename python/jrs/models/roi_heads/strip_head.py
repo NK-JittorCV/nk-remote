@@ -9,12 +9,13 @@ from jrs.ops.bbox_transforms import *
 from jrs.models.utils.modules import ConvModule
 
 from jittor.misc import _pair
-from .reg_block import StripBlock
 
 
-# 如果在 Jittor 中没有对应的模块，需要自定义或调整
+def build_linear_layer(cfg, in_features, out_features):
 
-# 自定义 ConvModule（如果需要更复杂的逻辑，可以进一步完善）
+    return nn.Linear(in_features, out_features)
+
+
 class ConvModule(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, padding=0, 
                  conv_cfg=None, norm_cfg=None):
@@ -30,32 +31,8 @@ class ConvModule(nn.Module):
         x = self.relu(x)
         return x
 
-# 自定义 build_linear_layer
-def build_linear_layer(cfg, in_features, out_features):
-    # cfg 可以包含更多配置信息，根据需要调整
-    return nn.Linear(in_features, out_features)
 
-# 自定义 accuracy 函数
-def accuracy(pred, target, topk=1):
-    pred_label = pred.argmax(dim=1)
-    correct = (pred_label == target).sum()
-    acc = correct.float32() / target.numel()
-    return acc
 
-# 假设存在一个 ROTATED_HEADS 注册器，我们可以定义一个装饰器
-def ROTATED_HEADS_register_module(cls):
-    # 这里直接返回类本身，或您可以按照您的框架进行调整
-    return cls
-
-# 假设 RotatedBBoxHead 类已经用 Jittor 实现
-class RotatedBBoxHead(nn.Module):
-    def __init__(self, *args, **kwargs):
-        super().__init__()
-        # 根据需要实现父类的内容
-
-    # 假设需要的属性和方法已经实现
-
-# 假设 StripBlock 已经用 Jittor 实现，或自定义实现
 class StripBlock(nn.Module):
     def __init__(self, in_channels):
         super().__init__()
@@ -69,15 +46,54 @@ class StripBlock(nn.Module):
         x = self.relu(x)
         return x
 
-@ROTATED_HEADS_register_module
-class StripHead_(RotatedBBoxHead):
-    """更通用的 bbox head，具有共享的卷积和全连接层，以及两个可选的独立分支。"""
+@HEADS.register_module()
+class StripHead_(nn.Module):
 
     def __init__(self,
                  num_shared_convs=0,
                  num_shared_fcs=0,
                  num_cls_convs=0,
                  num_cls_fcs=0,
+                 assigner=dict(
+                     type='MaxIoUAssigner',
+                     pos_iou_thr=0.5,
+                     neg_iou_thr=0.5,
+                     min_pos_iou=0.5,
+                     ignore_iof_thr=-1,
+                     match_low_quality=False,
+                     assigned_labels_filled=-1,
+                     iou_calculator=dict(type='BboxOverlaps2D_rotated_v1')),
+                 sampler=dict(
+                     type='RandomSamplerRotated',
+                     num=512,
+                     pos_fraction=0.25,
+                     neg_pos_ub=-1,
+                     add_gt_as_proposals=True),
+                 bbox_coder=dict(
+                     type='OrientedDeltaXYWHTCoder',
+                     target_means=[0., 0., 0., 0., 0.],
+                     target_stds=[0.1, 0.1, 0.2, 0.2, 0.1]),
+                 bbox_roi_extractor=dict(
+                     type='OrientedSingleRoIExtractor',
+                     roi_layer=dict(type='ROIAlignRotated_v1', output_size=7, sampling_ratio=2),
+                     out_channels=256,
+                     extend_factor=(1.4, 1.2),
+                     featmap_strides=[4, 8, 16, 32]),
+                 loss_cls=dict(
+                     type='CrossEntropyLoss',
+                     ),
+                 loss_bbox=dict(
+                     type='SmoothL1Loss', 
+                     beta=1.0, 
+                     loss_weight=1.0
+                     ),
+                 with_bbox=True,
+                 start_bbox_type='obb',
+                 end_bbox_type='obb',
+                 reg_dim=None,
+                 reg_class_agnostic=True,
+                 reg_decoded_bbox=False,
+                 pos_weight=-1,
                  num_reg_xy_wh_convs=0,
                  num_reg_xy_wh_fcs=0,
                  num_reg_theta_convs=0,
@@ -93,6 +109,12 @@ class StripHead_(RotatedBBoxHead):
         # 初始化参数
         self.num_shared_convs = num_shared_convs
         self.num_shared_fcs = num_shared_fcs
+        self.with_bbox = with_bbox
+        self.start_bbox_type = start_bbox_type
+        self.end_bbox_type = end_bbox_type
+        self.reg_class_agnostic = reg_class_agnostic
+        self.reg_decoded_bbox = reg_decoded_bbox
+        self.pos_weight = pos_weight
         self.num_cls_convs = num_cls_convs
         self.num_cls_fcs = num_cls_fcs
         self.num_reg_xy_wh_convs = num_reg_xy_wh_convs
@@ -116,7 +138,15 @@ class StripHead_(RotatedBBoxHead):
         self.loss_cls = kwargs.get('loss_cls', None)
         self.cls_predictor_cfg = kwargs.get('cls_predictor_cfg', {})
         self.reg_predictor_cfg = kwargs.get('reg_predictor_cfg', {})
-
+        
+        self.reg_dim = get_bbox_dim(self.end_bbox_type) \
+                if reg_dim is None else reg_dim
+        self.bbox_coder = build_from_cfg(bbox_coder, BOXES)
+        self.loss_cls = build_from_cfg(loss_cls, LOSSES)
+        self.loss_bbox = build_from_cfg(loss_bbox, LOSSES)
+        self.assigner = build_from_cfg(assigner, BOXES)
+        self.sampler = build_from_cfg(sampler, BOXES)
+        self.bbox_roi_extractor = build_from_cfg(bbox_roi_extractor, ROI_EXTRACTORS)
         # 添加共享的卷积和全连接层
         self.shared_convs, self.shared_fcs, last_layer_dim = \
             self._add_conv_fc_branch(
@@ -256,63 +286,9 @@ class StripHead_(RotatedBBoxHead):
             last_layer_dim = self.fc_out_channels
         return nn.ModuleList(branch_convs), nn.ModuleList(branch_fcs), last_layer_dim
 
-    def execute(self, x):
-        """前向函数。"""
-        if self.num_shared_convs > 0:
-            for conv in self.shared_convs:
-                x = conv(x)
 
-        if self.num_shared_fcs > 0:
-            if self.with_avg_pool:
-                x = self.avg_pool(x)
 
-            x = x.reshape(x.shape[0], -1)
-
-            for fc in self.shared_fcs:
-                x = self.relu(fc(x))
-        # 分离的分支
-        x_cls = x
-        x_reg = x
-
-        for conv in self.cls_convs:
-            x_cls = conv(x_cls)
-        if x_cls.ndim > 2:
-            if self.with_avg_pool:
-                x_cls = self.avg_pool(x_cls)
-            x_cls = x_cls.reshape(x_cls.shape[0], -1)
-        for fc in self.cls_fcs:
-            x_cls = self.relu(fc(x_cls))
-
-        x_reg_xy_wh = x_reg
-        for conv in self.reg_xy_wh_convs:
-            x_reg_xy_wh = conv(x_reg_xy_wh)
-
-        if x_reg_xy_wh.ndim > 2:
-            if self.with_avg_pool:
-                x_reg_xy_wh = self.avg_pool(x_reg_xy_wh)
-            x_reg_xy_wh = x_reg_xy_wh.reshape(x_reg_xy_wh.shape[0], -1)
-            # print(x_reg_xy_wh.shape)
-        for fc in self.reg_xy_wh_fcs:
-            x_reg_xy_wh = self.relu(fc(x_reg_xy_wh))
-        # print(x_reg_xy_wh.shape)
-
-        x_reg_theta = x_reg
-        for conv in self.reg_theta_convs:
-            x_reg_theta = conv(x_reg_theta)
-        if x_reg_theta.ndim > 2:
-            if self.with_avg_pool:
-                x_reg_theta = self.avg_pool(x_reg_theta)
-            x_reg_theta = x_reg_theta.reshape(x_reg_theta.shape[0], -1)
-        for fc in self.reg_theta_fcs:
-            x_reg_theta = self.relu(fc(x_reg_theta))
-
-        cls_score = self.fc_cls(x_cls) if self.with_cls else None
-        xy_wh_pred = self.fc_reg_xy_wh(x_reg_xy_wh) if self.with_reg else None
-        theta_pred = self.fc_reg_theta(x_reg_theta) if self.with_reg else None
-        bbox_pred = jt.concat([xy_wh_pred, theta_pred], dim=1)
-        return cls_score, bbox_pred
-
-@ROTATED_HEADS_register_module
+@HEADS.register_module()
 class StripHead(StripHead_):
 
     def __init__(self, fc_out_channels=1024, *args, **kwargs):
@@ -387,17 +363,16 @@ class StripHead(StripHead_):
 
         dets = jt.concat([obb2poly(bboxes), scores.unsqueeze(1)], dim=1)
         return dets, labels
-        
-    def forward_single(self, x, sampling_results, test=False):
 
+    def forward_single(self, x, sampling_results, test=False):
+        
         if test:
             rois = self.arb2roi(sampling_results, bbox_type=self.start_bbox_type)
         else:
             rois = self.arb2roi([res.bboxes for res in sampling_results], bbox_type=self.start_bbox_type)
 
         x = self.bbox_roi_extractor(x[:self.bbox_roi_extractor.num_inputs], rois)
-
-        # shared part
+        """前向函数。"""
         if self.num_shared_convs > 0:
             for conv in self.shared_convs:
                 x = conv(x)
@@ -405,11 +380,12 @@ class StripHead(StripHead_):
         if self.num_shared_fcs > 0:
             if self.with_avg_pool:
                 x = self.avg_pool(x)
-            x = x.flatten(1)
-            for fc in self.shared_fcs:
-                x = nn.relu(fc(x))
 
-        # separate branches
+            x = x.reshape(x.shape[0], -1)
+
+            for fc in self.shared_fcs:
+                x = self.relu(fc(x))
+        # 分离的分支
         x_cls = x
         x_reg = x
 
@@ -418,22 +394,38 @@ class StripHead(StripHead_):
         if x_cls.ndim > 2:
             if self.with_avg_pool:
                 x_cls = self.avg_pool(x_cls)
-            x_cls = x_cls.flatten(1)
+            x_cls = x_cls.reshape(x_cls.shape[0], -1)
         for fc in self.cls_fcs:
-            x_cls = nn.relu(fc(x_cls))
+            x_cls = self.relu(fc(x_cls))
 
-        for conv in self.reg_convs:
-            x_reg = conv(x_reg)
-        if x_reg.ndim > 2:
+        x_reg_xy_wh = x_reg
+        for conv in self.reg_xy_wh_convs:
+            x_reg_xy_wh = conv(x_reg_xy_wh)
+
+        if x_reg_xy_wh.ndim > 2:
             if self.with_avg_pool:
-                x_reg = self.avg_pool(x_reg)
-            x_reg = x_reg.flatten(1)
-        for fc in self.reg_fcs:
-            x_reg = nn.relu(fc(x_reg))
+                x_reg_xy_wh = self.avg_pool(x_reg_xy_wh)
+            x_reg_xy_wh = x_reg_xy_wh.reshape(x_reg_xy_wh.shape[0], -1)
+            # print(x_reg_xy_wh.shape)
+        for fc in self.reg_xy_wh_fcs:
+            x_reg_xy_wh = self.relu(fc(x_reg_xy_wh))
+        # print(x_reg_xy_wh.shape)
+
+        x_reg_theta = x_reg
+        for conv in self.reg_theta_convs:
+            x_reg_theta = conv(x_reg_theta)
+        if x_reg_theta.ndim > 2:
+            if self.with_avg_pool:
+                x_reg_theta = self.avg_pool(x_reg_theta)
+            x_reg_theta = x_reg_theta.reshape(x_reg_theta.shape[0], -1)
+        for fc in self.reg_theta_fcs:
+            x_reg_theta = self.relu(fc(x_reg_theta))
 
         cls_score = self.fc_cls(x_cls) if self.with_cls else None
-        bbox_pred = self.fc_reg(x_reg) if self.with_reg else None
-        return cls_score, bbox_pred, rois
+        xy_wh_pred = self.fc_reg_xy_wh(x_reg_xy_wh) if self.with_reg else None
+        theta_pred = self.fc_reg_theta(x_reg_theta) if self.with_reg else None
+        bbox_pred = jt.concat([xy_wh_pred, theta_pred], dim=1)
+        return cls_score, bbox_pred , rois
     
     def loss(self, cls_score, bbox_pred, rois, labels, label_weights, bbox_targets, bbox_weights, reduction_override=None):
 

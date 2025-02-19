@@ -2,10 +2,10 @@ import jittor as jt
 import jittor.nn as nn
 from jittor import init
 import math
-
+from functools import partial
 from jrs.utils.registry import BACKBONES
-from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-
+from jittor.nn import DropPath
+from jittor.init import trunc_normal_
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
 
@@ -13,6 +13,7 @@ IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
 import errno
 import hashlib
 import os
+import requests
 import re
 import shutil
 import sys
@@ -25,45 +26,15 @@ from tqdm import tqdm
 
 HASH_REGEX = re.compile(r'-([a-f0-9]*)\.')
 
-def download_url_to_file(url, dst, hash_prefix=None, progress=True):
-    file_size = None
-    req = Request(url, headers={"User-Agent": "torch.hub"})
-    u = urlopen(req)
-    meta = u.info()
-    if hasattr(meta, 'getheaders'):
-        content_length = meta.getheaders("Content-Length")
+def to_2tuple(x):
+    if isinstance(x, (int, float)):
+        return (x, x)
+    elif isinstance(x, (tuple, list)) and len(x) == 2:
+        return tuple(x)
     else:
-        content_length = meta.get_all("Content-Length")
-    if content_length is not None and len(content_length) > 0:
-        file_size = int(content_length[0])
+        raise ValueError("Input must be an int, float, or a tuple/list of length 2.")
 
-    dst = os.path.expanduser(dst)
-    dst_dir = os.path.dirname(dst)
-    f = tempfile.NamedTemporaryFile(delete=False, dir=dst_dir)
-    try:
-        if hash_prefix is not None:
-            sha256 = hashlib.sha256()
-        with tqdm(total=file_size, disable=not progress,
-                  unit='B', unit_scale=True, unit_divisor=1024) as pbar:
-            while True:
-                buffer = u.read(8192)
-                if len(buffer) == 0:
-                    break
-                f.write(buffer)
-                if hash_prefix is not None:
-                    sha256.update(buffer)
-                pbar.update(len(buffer))
-        f.close()
-        if hash_prefix is not None:
-            digest = sha256.hexdigest()
-            if digest[:len(hash_prefix)] != hash_prefix:
-                raise RuntimeError('invalid hash value (expected "{}", got "{}")'
-                                   .format(hash_prefix, digest))
-        shutil.move(f.name, dst)
-    finally:
-        f.close()
-        if os.path.exists(f.name):
-            os.remove(f.name)
+
 
 def _is_legacy_zip_format(filename):
     if zipfile.is_zipfile(filename):
@@ -136,32 +107,31 @@ class Mlp(nn.Module):
         return x
 
 
+
 class LSKblock(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        self.conv0 = nn.Conv2d(dim, dim, 5, padding=2, groups=dim)
-        self.conv_spatial = nn.Conv2d(dim, dim, 7, stride=1, padding=9, groups=dim, dilation=3)
-        self.conv1 = nn.Conv2d(dim, dim//2, 1)
-        self.conv2 = nn.Conv2d(dim, dim//2, 1)
-        self.conv_squeeze = nn.Conv2d(2, 2, 7, padding=3)
-        self.conv = nn.Conv2d(dim//2, dim, 1)
+        self.conv0 = nn.Conv2d(dim, dim, kernel_size=5, padding=2, groups=dim)
+        self.conv_spatial = nn.Conv2d(dim, dim, kernel_size=7, stride=1, padding=9, groups=dim, dilation=3)
+        self.conv1 = nn.Conv2d(dim, dim // 2, kernel_size=1)
+        self.conv2 = nn.Conv2d(dim, dim // 2, kernel_size=1)
+        self.conv_squeeze = nn.Conv2d(2, 2, kernel_size=7, padding=3)
+        self.conv = nn.Conv2d(dim // 2, dim, kernel_size=1)
 
-    def forward(self, x):   
+    def execute(self, x):
         attn1 = self.conv0(x)
         attn2 = self.conv_spatial(attn1)
-
         attn1 = self.conv1(attn1)
         attn2 = self.conv2(attn2)
-        
-        attn = jt.cat([attn1, attn2], dim=1)
-        avg_attn = jt.mean(attn, dim=1, keepdim=True)
-        max_attn, _ = jt.max(attn, dim=1, keepdim=True)
-        agg = jt.cat([avg_attn, max_attn], dim=1)
+        attn = jt.concat([attn1, attn2], dim=1)
+        avg_attn = jt.mean(attn, dim=1, keepdims=True)
+        max_attn = jt.max(attn, dim=1, keepdims=True)
+        agg = jt.concat([avg_attn, max_attn], dim=1)
         sig = self.conv_squeeze(agg).sigmoid()
-        attn = attn1 * sig[:,0,:,:].unsqueeze(1) + attn2 * sig[:,1,:,:].unsqueeze(1)
+        attn = attn1 * sig[:, 0, :, :].unsqueeze(1) + attn2 * sig[:, 1, :, :].unsqueeze(1)
         attn = self.conv(attn)
         return x * attn
-
+    
 class SpatialAttention(nn.Module):
     def __init__(self, d_model):
         super().__init__()
@@ -322,7 +292,7 @@ class LSKNet(nn.Module):
     def freeze_patch_emb(self):
         self.patch_embed1.requires_grad = False
 
-    # @torch.jit.ignore
+    # 
     def no_weight_decay(self):
         return {'pos_embed1', 'pos_embed2', 'pos_embed3', 'pos_embed4', 'cls_token'}  # has pos_embed may be better
 
@@ -378,41 +348,76 @@ def _conv_filter(state_dict, patch_size=16):
 
     return out_dict
 
-from torch.hub import load_state_dict_from_url
+from jittor_utils import load_pytorch
+
+import torch
+import jittor as jt
+import os
+import requests
+
+def convert_pytorch_to_jittor(pytorch_path, jittor_path):
+    # 使用 PyTorch 加载权重
+    pytorch_weights = torch.load(pytorch_path, map_location="cpu")
+    
+    # 转换为 Jittor 格式
+    jittor_weights = {}
+    for key, value in pytorch_weights.items():
+        if isinstance(value, torch.Tensor):
+            jittor_weights[key] = jt.array(value.numpy())
+        else:
+            jittor_weights[key] = value
+    
+    # 保存为 Jittor 格式
+    jt.save(jittor_weights, jittor_path)
+    print(f"Converted weights saved to {jittor_path}")
+
 def load_param(url, model):
-    checkpoint = load_state_dict_from_url(
-        url=url, map_location="cpu", check_hash=True
-    )
-    del checkpoint["state_dict"]["head.weight"]
-    del checkpoint["state_dict"]["head.bias"]
-    model.load_state_dict(checkpoint["state_dict"])
-    return model
+    cache_dir = "./pretrained_weights"
+    os.makedirs(cache_dir, exist_ok=True)
+    filename = os.path.basename(url)
+    file_path = os.path.join(cache_dir, filename)
+
+    # 如果文件不存在，则从 URL 下载
+    if not os.path.exists(file_path):
+        print(f"Downloading {url} to {file_path}")
+        response = requests.get(url)
+        with open(file_path, "wb") as f:
+            f.write(response.content)
+
+    # 将 PyTorch 权重转换为 Jittor 格式
+    jittor_path = file_path.replace(".pth", "_jittor.pkl")
+    if not os.path.exists(jittor_path):
+        print("Converting PyTorch weights to Jittor format...")
+        convert_pytorch_to_jittor(file_path, jittor_path)
+
+    # 加载 Jittor 格式的权重
+    print(f"Loading weights from {jittor_path}")
+    checkpoint = jt.load(jittor_path)
+
+    # 删除不需要的权重（例如分类头）
+    del checkpoint
 
 @BACKBONES.register_module()
 def LSKNet_t(pretrained=False, **kwargs):
     model = LSKNet(
-        embed_dims=[32, 64, 160, 256], mlp_ratios=[8, 8, 4, 4], 
+        embed_dims=[32, 64, 160, 256], mlp_ratios=[8, 8, 4, 4],
         norm_layer=nn.LayerNorm, depths=[3, 3, 5, 2],
-        **kwargs)
+        **kwargs
+    )
     model.default_cfg = _cfg()
-
-    if pretrained:
-        model.load_state_dict
-        model = load_param(model_urls['lsknet_t'], model)
+    # if pretrained:
+    #     model = load_param(model_urls['lsknet_t'], model)
     return model
-
 
 @BACKBONES.register_module()
 def LSKNet_s(pretrained=False, **kwargs):
     model = LSKNet(
         embed_dims=[64, 128, 320, 512], mlp_ratios=[8, 8, 4, 4],
         norm_layer=nn.LayerNorm, depths=[2, 2, 4, 2],
-        **kwargs)
+        **kwargs
+    )
     model.default_cfg = _cfg()
-
-    if pretrained:
-        model.load_state_dict
-        model = load_param(model_urls['lsknet_s'], model)
+    # if pretrained:
+    #     model = load_param(model_urls['lsknet_s'], model)
     return model
- 
 
