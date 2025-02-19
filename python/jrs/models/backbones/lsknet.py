@@ -348,55 +348,6 @@ def _conv_filter(state_dict, patch_size=16):
 
     return out_dict
 
-from jittor_utils import load_pytorch
-
-import torch
-import jittor as jt
-import os
-import requests
-
-def convert_pytorch_to_jittor(pytorch_path, jittor_path):
-    # 使用 PyTorch 加载权重
-    pytorch_weights = torch.load(pytorch_path, map_location="cpu")
-    
-    # 转换为 Jittor 格式
-    jittor_weights = {}
-    for key, value in pytorch_weights.items():
-        if isinstance(value, torch.Tensor):
-            jittor_weights[key] = jt.array(value.numpy())
-        else:
-            jittor_weights[key] = value
-    
-    # 保存为 Jittor 格式
-    jt.save(jittor_weights, jittor_path)
-    print(f"Converted weights saved to {jittor_path}")
-
-def load_param(url, model):
-    cache_dir = "./pretrained_weights"
-    os.makedirs(cache_dir, exist_ok=True)
-    filename = os.path.basename(url)
-    file_path = os.path.join(cache_dir, filename)
-
-    # 如果文件不存在，则从 URL 下载
-    if not os.path.exists(file_path):
-        print(f"Downloading {url} to {file_path}")
-        response = requests.get(url)
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-
-    # 将 PyTorch 权重转换为 Jittor 格式
-    jittor_path = file_path.replace(".pth", "_jittor.pkl")
-    if not os.path.exists(jittor_path):
-        print("Converting PyTorch weights to Jittor format...")
-        convert_pytorch_to_jittor(file_path, jittor_path)
-
-    # 加载 Jittor 格式的权重
-    print(f"Loading weights from {jittor_path}")
-    checkpoint = jt.load(jittor_path)
-
-    # 删除不需要的权重（例如分类头）
-    del checkpoint
-
 @BACKBONES.register_module()
 def LSKNet_t(pretrained=False, **kwargs):
     model = LSKNet(
