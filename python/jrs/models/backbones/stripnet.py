@@ -254,22 +254,6 @@ def constant_init(module, value):
         module.bias.zero_()
 
 
-def load_param(url, model):
-    cache_dir = "./pretrained_weights"
-    os.makedirs(cache_dir, exist_ok=True)
-    filename = os.path.basename(url)
-    file_path = os.path.join(cache_dir, filename)
-    if not os.path.exists(file_path):
-        print(f"Downloading {url} to {file_path}")
-        response = requests.get(url)
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-    print(f"Loading weights from {file_path}")
-    checkpoint = jt.load(file_path)
-    del checkpoint["state_dict"]["head.weight"]
-    del checkpoint["state_dict"]["head.bias"]
-    model.load_parameters(checkpoint["state_dict"])
-    return model
 
 @BACKBONES.register_module()
 def StripNet_T(pretrained=False, **kwargs):
