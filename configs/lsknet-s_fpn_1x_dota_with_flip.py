@@ -6,10 +6,10 @@ model = dict(
         img_size=1024,
         num_stages=4,
         out_indices = (0, 1, 2, 3),
-        pretrained= "pretrained_weights/lsk_s_backbone-2ef8a593_jittor.pkl"),
+        pretrained= ""),
     neck=dict(
         type='FPN',
-        in_channels=[64, 160, 256, 512],
+        in_channels=[64, 128, 320 , 512],
         out_channels=256,
         num_outs=5),
     rpn = dict(
@@ -110,7 +110,7 @@ model = dict(
 dataset = dict(
     train=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -142,7 +142,7 @@ dataset = dict(
     ),
     val=dict(
         type="DOTADataset",
-        dataset_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/trainval_1024_200_1.0',
+        dataset_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/trainval_1024_200_1.0',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -164,7 +164,7 @@ dataset = dict(
     ),
     test=dict(
         type="ImageDataset",
-        images_dir='/home/cxjyxx_me/workspace/JAD/datasets/processed_DOTA/test_1024_200_1.0/images/',
+        images_dir='/defaultShare/pubdata/remote_sensing/split_ss_dota1.0_jittor/test_1024_200_1.0/images/',
         transforms=[
             dict(
                 type="RotatedResize",
@@ -209,3 +209,5 @@ max_epoch = 12
 eval_interval = 100
 checkpoint_interval = 1
 log_interval = 50
+
+resume_path="pretrained_weights/lsk_s_fpn_1x_dota_le90_jittor.pkl"
