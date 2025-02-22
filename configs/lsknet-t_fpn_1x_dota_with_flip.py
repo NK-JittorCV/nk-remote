@@ -185,13 +185,12 @@ dataset = dict(
 )
 
 optimizer = dict(
-    type='SGD', 
-    lr=0.01/4., #0.0,#0.01*(1/8.), 
-    momentum=0.9, 
-    weight_decay=0.0001,
-    grad_clip=dict(
-        max_norm=35, 
-        norm_type=2))
+    type='AdamW',
+    lr=0.0001,
+    betas=(0.9, 0.999),
+    weight_decay=0.05
+)
+
 
 scheduler = dict(
     type='StepLR',
