@@ -356,8 +356,8 @@ def LSKNet_t(pretrained=False, **kwargs):
         **kwargs
     )
     model.default_cfg = _cfg()
-    # if pretrained:
-    #     model = load_param(model_urls['lsknet_t'], model)
+    if pretrained:
+        model.load(pretrained)
     return model
 
 @BACKBONES.register_module()
@@ -368,7 +368,7 @@ def LSKNet_s(pretrained=False, **kwargs):
         **kwargs
     )
     model.default_cfg = _cfg()
-    # if pretrained:
-    #     model = load_param(model_urls['lsknet_s'], model)
+    if pretrained:
+        model.load(pretrained)
     return model
 
