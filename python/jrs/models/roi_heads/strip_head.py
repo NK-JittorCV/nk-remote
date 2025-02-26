@@ -54,6 +54,7 @@ class StripHead_(nn.Module):
                  num_shared_fcs=0,
                  num_cls_convs=0,
                  num_cls_fcs=0,
+                 score_thresh=0.05,
                  assigner=dict(
                      type='MaxIoUAssigner',
                      pos_iou_thr=0.5,
@@ -125,6 +126,7 @@ class StripHead_(nn.Module):
         self.fc_out_channels = fc_out_channels
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
+        self.score_thresh = score_thresh
 
         # 假设 self.in_channels 定义在父类中，或在 kwargs 中提供
         self.in_channels = kwargs.get('in_channels', 256)
