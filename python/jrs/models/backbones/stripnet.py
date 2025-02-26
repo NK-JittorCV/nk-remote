@@ -100,14 +100,14 @@ class StripBlock(nn.Module):
     def __init__(self, dim, k1, k2):
         super().__init__()
         self.conv0 = nn.Conv(dim, dim, 5, padding=2, groups=dim)
-        self.strip_conv1 = nn.Conv(dim, dim, (k1, k2), padding=(k1 // 2, k2 // 2), groups=dim)
-        self.strip_conv2 = nn.Conv(dim, dim, (k2, k1), padding=(k2 // 2, k1 // 2), groups=dim)
+        self.conv_spatial1 = nn.Conv(dim, dim, (k1, k2), padding=(k1 // 2, k2 // 2), groups=dim)
+        self.conv_spatial2 = nn.Conv(dim, dim, (k2, k1), padding=(k2 // 2, k1 // 2), groups=dim)
         self.conv1 = nn.Conv(dim, dim, 1)
 
     def execute(self, x):
         attn = self.conv0(x)
-        attn = self.strip_conv1(attn)
-        attn = self.strip_conv2(attn)
+        attn = self.conv_spatial1(attn)
+        attn = self.conv_spatial2(attn)
         attn = self.conv1(attn)
         return x * attn
 
@@ -253,8 +253,6 @@ def constant_init(module, value):
     if module.bias is not None:
         module.bias.zero_()
 
-
-
 @BACKBONES.register_module()
 def StripNet_T(pretrained=False, **kwargs):
     model = StripNet(
@@ -263,8 +261,8 @@ def StripNet_T(pretrained=False, **kwargs):
         **kwargs
     )
     model.default_cfg = _cfg()
-    # if pretrained:
-    #     model = load_param(model_urls['lsknet_t'], model)
+    if pretrained:
+        model.load(pretrained)
     return model
 
 @BACKBONES.register_module()
@@ -275,6 +273,6 @@ def StripNet_S(pretrained=False, **kwargs):
         **kwargs
     )
     model.default_cfg = _cfg()
-    # if pretrained:
-    #     model = load_param(model_urls['lsknet_s'], model)
+    if pretrained:
+        model.load(pretrained)
     return model
