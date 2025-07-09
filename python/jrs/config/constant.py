@@ -204,6 +204,9 @@ FAIR1M_1_5_CLASSES = ['Airplane', 'Ship', 'Vehicle', 'Basketball_Court', 'Tennis
 
 SSDD_CLASSES = ['ship']
 
+
+RSAR_CLASSES = ['ship', 'aircraft', 'car', 'tank', 'bridge', 'harbor']
+
 def get_classes_by_name(name):
     res = {
         'VOC':      VOC_CLASSES,
@@ -218,6 +221,7 @@ def get_classes_by_name(name):
         'FAIR1M_1_5':   FAIR1M_1_5_CLASSES,
         'SSDD':     SSDD_CLASSES,
         'SSDD+':    SSDD_CLASSES,
+        'RSAR':     RSAR_CLASSES
     }
     assert(name in res)
     return res[name]

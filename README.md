@@ -55,6 +55,8 @@ FAIR Dataset: [fair.md](docs/fair.md)
 
 SSDD/SSDD+: [ssdd.md](docs/ssdd.md)
 
+RSAR: [rsar.md](docs/rsar.md)
+
 You can also build your own dataset by convert your datas to DOTA format.
 ### Config
 JRS defines the used model, dataset and training/testing method by `config-file`, please check the [config.md](docs/config.md) to learn how it works.
@@ -62,6 +64,7 @@ JRS defines the used model, dataset and training/testing method by `config-file`
 ```shell
 python tools/run_net.py --config-file=configs/s2anet_r50_fpn_1x_dota.py --task=train
 ```
+> If you install `cutlass` error, please see [issue#642](https://github.com/Jittor/jittor/issues/642) in jittor repository.
 
 ### Test
 If you want to test the downloaded trained models, please set ```resume_path={you_checkpointspath}``` in the last line of the config file.
@@ -157,6 +160,8 @@ python run_net.py --config-file=configs/base.py --task=test
 - :heavy_check_mark: SSDD+
 - :heavy_check_mark: FAIR
 - :heavy_check_mark: COCO
+- :heavy_check_mark: RSAR
+
 
 ## The Team
 
@@ -181,6 +186,13 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
   title={Strip R-CNN: Large Strip Convolution for Remote Sensing Object Detection},
   author={Yuan, Xinbin and Zheng, ZhaoHui and Li, Yuxuan and Liu, Xialei and Liu, Li and Li, Xiang and Hou, Qibin and Cheng, Ming-Ming},
   journal={arXiv preprint arXiv:2501.03775},
+  year={2025}
+}
+
+@inproceedings{zhang2025rsar,
+  title={RSAR: Restricted State Angle Resolver and Rotated SAR Benchmark},
+  author={Zhang, Xin and Yang, Xue and Li, Yuxuan and Yang, Jian and Cheng, Ming-Ming and Li, Xiang},
+  booktitle={Proceedings of the Computer Vision and Pattern Recognition Conference},
   year={2025}
 }
 
@@ -211,5 +223,6 @@ JRS is currently maintained by the [NKU Media Computing Lab](https://mmcheng.net
 13. [OBBDetection](https://github.com/jbwang1997/OBBDetection)
 14. [LSKNet](https://github.com/zcablii/LSKNet)
 15. [Strip R-CNN](https://github.com/YXB-NKU/Strip-R-CNN)
+16. [RSAR](https://github.com/zhasion/RSAR)
 
 
